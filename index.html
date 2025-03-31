@@ -5,33 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>공포 이야기 봇</title>
     
+    <script src="https://cdn.tailwindcss.com"></script>
     
-
-<script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    
     <style>
-        /* Use VT323 font for the old computer terminal look */
+        /* 전체 페이지 및 입력/버튼 요소에 VT323 폰트 적용 */
         body, input, button {
             font-family: 'VT323', monospace;
         }
-        /* Basic scanline effect */
+        /* 화면 깜빡임(flicker) 효과를 위한 가상 요소 스타일 */
         body::after {
             content: " ";
             display: block;
-            position: absolute;
+            position: fixed; /* Use fixed to cover the whole viewport */
             top: 0;
             left: 0;
             bottom: 0;
             right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 2;
-            background-size: 100% 4px, 3px 100%;
-            pointer-events: none;
-            animation: flicker 0.15s infinite;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
+            z-index: 2; /* 다른 요소 위에 표시되도록 z-index 설정 */
+            background-size: 100% 4px, 3px 100%; /* 스캔라인 효과 크기 */
+            pointer-events: none; /* 마우스 이벤트 통과 */
+            animation: flicker 0.15s infinite; /* 깜빡임 애니메이션 적용 */
         }
-        /* Flicker animation */
+        /* 깜빡임 애니메이션 정의 */
         @keyframes flicker {
           0% { opacity: 0.219; }
           5% { opacity: 0.946; }
@@ -56,187 +58,383 @@
           100% { opacity: 0.33; }
         }
 
-        /* Custom scrollbar for chat area */
+        /* 채팅창 스크롤바 스타일 */
         #chatbox::-webkit-scrollbar {
             width: 8px;
         }
         #chatbox::-webkit-scrollbar-track {
-            background: #1a1a1a; /* Dark track */
-            border-radius: 0;
+            background: #1a1a1a; /* 스크롤바 트랙 배경색 */
+            border-radius: 0; /* 각진 모서리 */
         }
         #chatbox::-webkit-scrollbar-thumb {
-            background: #00ff00; /* Green thumb */
-            border-radius: 0;
+            background: #00ff00; /* 스크롤바 색상 (녹색) */
+            border-radius: 0; /* 각진 모서리 */
         }
         #chatbox::-webkit-scrollbar-thumb:hover {
-            background: #00cc00; /* Darker green thumb on hover */
+            background: #00cc00; /* 스크롤바 호버 시 색상 */
         }
-        /* Add slight glow to text */
+        /* 텍스트 글로우 효과 */
         .text-glow {
              text-shadow: 0 0 5px #00ff00, 0 0 10px #00ff00;
         }
+        /* 음악 컨트롤 버튼 스타일 */
+        #musicControl {
+            position: fixed; /* 화면 기준으로 위치 고정 */
+            top: 20px;
+            right: 20px;
+            background-color: #00ff00;
+            color: black;
+            border: 1px solid #00cc00;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            z-index: 10; /* 다른 요소 위에 표시되도록 z-index 설정 */
+        }
+         #musicControl:hover {
+             background-color: #00cc00;
+         }
+         /* 이미지 스타일 */
+         .chat-image {
+             max-width: 80%; /* 이미지 최대 너비 */
+             max-height: 300px; /* 이미지 최대 높이 */
+             border: 1px solid #00ff00; /* 녹색 테두리 */
+             margin-top: 8px; /* 위쪽 여백 */
+             display: block; /* 블록 요소로 만들어 가운데 정렬 용이 */
+             margin-left: auto;
+             margin-right: auto;
+         }
     </style>
 </head>
-<body class="bg-black flex items-center justify-center min-h-screen p-4">
+<body class="bg-black flex flex-col items-center min-h-screen p-4 pt-8">
 
-    
-    
+    <button id="musicControl">음악 켜기</button>
 
-<div class="w-full max-w-2xl bg-black border-4 border-gray-700 rounded-lg shadow-xl overflow-hidden flex flex-col" style="height: 80vh; box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);">
+    <div class="w-11/12 md:w-3/4 lg:w-2/3 xl:w-1/2 bg-black border-4 border-gray-700 rounded-lg shadow-xl overflow-hidden flex flex-col mx-auto" style="min-height: 60vh; max-height: 85vh; box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);">
         
-        
-        
-
-<div class="bg-black p-3 border-b-2 border-gray-700 text-center">
+        <div class="bg-black p-3 border-b-2 border-gray-700 text-center">
             <h1 class="text-2xl font-bold text-green-500 text-glow">[ 경고: 공포 이야기 봇 ]</h1>
         </div>
 
-        
-        
-        
-        
-
-<div id="chatbox" class="flex-1 p-4 overflow-y-auto space-y-4 bg-black text-green-400 text-lg">
-            
-            
-            
-            
-            
-
-<div class="flex justify-start">
+        <div id="chatbox" class="flex-1 p-6 overflow-y-auto space-y-4 bg-black text-green-400 text-lg">
+            <div class="flex justify-start">
                 <div class="bg-transparent p-2 rounded-none max-w-xs text-glow">
-                    ...누구...세요...? 여긴... 왜 오셨죠...? 💀
+                    ...무슨 이야기를 듣고 싶으신가요...? '이야기 해줘' 라고 말해보세요... 💀
                 </div>
             </div>
         </div>
 
-        
-        
-        
-        
-        
-        
-
-<div class="p-4 bg-black border-t-2 border-gray-700 flex items-center space-x-2">
+        <div class="p-4 bg-black border-t-2 border-gray-700 flex items-center space-x-2">
             <span class="text-green-500 text-glow text-xl">></span>
-            <input type="text" id="userInput" class="flex-1 bg-transparent border border-green-700 rounded-none px-3 py-1 text-green-400 focus:outline-none focus:ring-1 focus:ring-green-500 placeholder-gray-600 text-lg" placeholder="무언가 입력하세요... 용기가 있다면..." autocomplete="off">
-            <button id="sendButton" class="bg-green-700 hover:bg-green-600 text-black font-bold py-1 px-3 rounded-none border border-green-900 transition duration-200 ease-in-out text-lg">
+            <input type="text" id="userInput" class="flex-1 bg-transparent border border-green-700 rounded-none px-3 py-1 text-green-400 focus:outline-none focus:ring-1 focus:ring-green-500 placeholder-gray-600 text-lg" placeholder="무언가 속삭여 보세요..." autocomplete="off">
+            <button type="button" id="sendButton" class="bg-green-700 hover:bg-green-600 text-black font-bold py-1 px-3 rounded-none border border-green-900 transition duration-200 ease-in-out text-lg">
                 전송
             </button>
         </div>
     </div>
 
     <script>
-        const chatbox = document.getElementById('chatbox');
-        const userInput = document.getElementById('userInput');
-        const sendButton = document.getElementById('sendButton');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM is fully loaded");
+            
+            const chatbox = document.getElementById('chatbox');
+            const userInput = document.getElementById('userInput');
+            const sendButton = document.getElementById('sendButton');
+            const musicControlButton = document.getElementById('musicControl');
 
-        // Predefined horror story snippets/phrases for the bot (in Korean)
-        const botResponses = [
-            "방금... 창 밖에 누가 있었던 것 같은데...",
-            "쉿... 발소리가 들리지 않아요?",
-            "거울 속의 당신, 정말 당신이 맞나요?",
-            "이 메시지는... 어디서 오는 걸까요?",
-            "어두워지면... 혼자 계시지 마세요.",
-            "똑똑... 문을 열어줘야 할까요?",
-            "제 뒤에... 누가 서 있는 것 같아요.",
-            "스크린 너머로... 당신을 보고 있어요.",
-            "잠들면... 꿈 속에서 만날지도 몰라요.",
-            "삐걱... 삐걱... 다락방에서 나는 소리...",
-            "절대... 뒤돌아보지 마세요."
-        ];
-
-        // Function to add a message to the chatbox
-        function addMessage(message, sender) {
-            console.log(`Adding message: "${message}" from ${sender}`); // Debug log
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('flex', sender === 'user' ? 'justify-end' : 'justify-start');
-
-            const messageBubble = document.createElement('div');
-            messageBubble.classList.add(
-                'p-2', // Reduced padding
-                'rounded-none', // No rounded corners
-                'max-w-md', // Slightly wider max width
-                'text-lg', // Monospace font size
-                sender === 'user' ? 'bg-transparent text-green-300' : 'bg-transparent text-green-500 text-glow' // User messages less bright
-            );
-
-            // Simulate typing effect for bot messages
-            if (sender === 'bot') {
-                messageBubble.textContent = ''; // Start empty
-                let i = 0;
-                const typingInterval = setInterval(() => {
-                    if (i < message.length) {
-                        messageBubble.textContent += message.charAt(i);
-                        i++;
-                        chatbox.scrollTop = chatbox.scrollHeight; // Scroll as text types
-                    } else {
-                        clearInterval(typingInterval);
-                        console.log("Bot typing finished."); // Debug log
-                    }
-                }, 50); // Typing speed
+            if (!chatbox || !userInput || !sendButton || !musicControlButton) {
+                console.error("필수 요소를 찾을 수 없습니다.");
+                return; 
             } else {
-                 messageBubble.textContent = message; // User message appears instantly
+                console.log("All required elements loaded successfully");
             }
 
-            messageDiv.appendChild(messageBubble);
-            chatbox.appendChild(messageDiv);
+            // --- 오디오 설정 ---
+            let synth = null; 
+            let loop = null;  
+            let musicPlaying = false;
 
-            // Scroll to the bottom (especially for user messages)
-             if (sender === 'user') {
+            function setupMusic() {
+                if (synth) return; 
+                if (Tone.context.state !== 'running') {
+                   Tone.start(); 
+                }
+                synth = new Tone.FMSynth({
+                    harmonicity: 3,
+                    modulationIndex: 10,
+                    detune: 0,
+                    oscillator: { type: "sine" },
+                    envelope: { attack: 0.01, decay: 0.1, sustain: 0.5, release: 1 },
+                    modulation: { type: "square" },
+                    modulationEnvelope: { attack: 0.5, decay: 0, sustain: 1, release: 0.5 }
+                }).toDestination();
+                const reverb = new Tone.Reverb(4).toDestination(); 
+                synth.connect(reverb);
+                const pattern = new Tone.Pattern((time, note) => {
+                    if (Math.random() < 0.8) {
+                        synth.triggerAttackRelease(note, "8n", time);
+                    } else if (Math.random() < 0.9) {
+                         synth.triggerAttackRelease("C2", "4n", time); 
+                    }
+                     synth.volume.rampTo(Math.random() * -20 - 10, 0.5);
+                }, ["C3", "D#3", null, "C3", null, "F#2", null, "G#2"], "randomWalk"); 
+                pattern.interval = "2n"; 
+                Tone.Transport.bpm.value = 40; 
+                loop = pattern; 
+                console.log("Music setup complete.");
+            }
+
+            async function toggleMusic() {
+                // 사용자가 버튼을 눌렀을 때 오디오 컨텍스트 시작 시도
+                if (Tone.context.state !== 'running') {
+                    await Tone.start();
+                    console.log("AudioContext started by user interaction.");
+                }
+                 // 오디오 컨텍스트가 시작된 후에만 음악 설정 및 재생
+                if (Tone.context.state === 'running') {
+                    if (!synth) {
+                        setupMusic(); 
+                    }
+                    if (musicPlaying) {
+                        Tone.Transport.stop();
+                        if (loop) loop.stop(); 
+                        musicControlButton.textContent = "음악 켜기";
+                        musicPlaying = false;
+                        console.log("Music stopped");
+                    } else {
+                        if (Tone.Transport.state !== "started") {
+                            Tone.Transport.start();
+                        }
+                        if (loop) loop.start(0); 
+                        musicControlButton.textContent = "음악 끄기";
+                        musicPlaying = true;
+                        console.log("Music started");
+                    }
+                } else {
+                    console.warn("AudioContext not running. Music cannot be played yet.");
+                    // 사용자에게 오디오 활성화를 유도하는 메시지를 표시할 수도 있습니다.
+                    // 예: alert("오디오를 활성화하려면 화면을 클릭해주세요.");
+                }
+            }
+
+
+            musicControlButton.addEventListener('click', toggleMusic);
+
+            // --- 챗봇 로직 ---
+            const defaultBotResponses = [ 
+                "...",
+                "계속 말해보세요...",
+                "듣고 있어요...",
+                "그래서...",
+                "흥미롭군요...",
+                "정말인가요?",
+                "어둠 속에서 무언가 느껴지지 않나요?",
+                "쉿...",
+            ];
+
+            const horrorStories = [
+                "1. 마지막 메시지\n새벽 3시, 스마트폰 화면이 갑자기 밝아지면서 알림음이 울렸다.\n졸린 눈으로 화면을 확인한 순간, 나는 숨이 멎는 것 같았다.\n3개월 전 돌아가신 할머니의 번호에서 메시지가 온 것이다.\n\"손녀야, 이제 곧 만나자. 내가 너를 데리러 갈게.\"\n손이 떨리며 휴대폰을 떨어뜨렸다.\n그 순간 창문에 누군가 손톱으로 긁는 소리가 들리기 시작했고,\n방 안에 할머니 특유의 라벤더 향기가 퍼져나갔다.\n침대 밑에서는 뭔가 끌리는 소리가 들려왔다.\n용기를 내어 아래를 보니, 할머니가 평소 즐겨 신던 낡은 슬리퍼가 침대 밑에서 천천히 기어 나오고 있었다.",
+                "2. 거울 속 낯선 이\n매일 아침 화장실 거울을 볼 때마다, 내 뒤에 희미하게 보이는 그림자가 있었다.\n처음에는 단순한 착시라고 생각했지만, 날이 갈수록 그 형체가 점점 또렷해지고 가까워졌다.\n일주일째 되는 날, 그 그림자는 이제 완전한 사람의 형상을 갖추었고, 내가 움직일 때마다 미세한 시간차로 따라 움직였다.\n열흘째 되는 날, 그것은 내 뒤에서 불과 30센티미터 거리까지 다가왔고, 이제는 거울 속에서 그것의 숨소리가 들리기 시작했다.\n오늘 아침, 그것이 내 어깨에 차가운 손을 얹었다.\n거울 속에서 눈이 마주쳤을 때, 나는 그것의 얼굴이 점점 내 얼굴을 닮아가고 있다는 사실을 깨달았다.\n그리고 저녁, 거울 앞에 선 내 모습은 더 이상 내가 아니었다.\n내 몸 안에 갇힌 영혼은 거울 속에서 절망적으로 나를 바라보고 있었다.",
+                "3. 지하실의 소리\n세 밤 연속으로 지하실에서 희미한 두드리는 소리가 들려왔다.\n처음에는 파이프 소리라고 생각했지만, 점점 규칙적인 패턴으로 바뀌었고, 마치 누군가가 모스 부호로 메시지를 보내는 것 같았다.\n용기를 내어 지하실로 내려갔지만, 불을 켜자 그곳에는 아무도 없었고 소리도 멈췄다.\n구석구석 살펴봐도 이상한 점을 발견할 수 없었다.\n안도감을 느끼며 다시 올라와 지하실 문을 닫고 열쇠로 단단히 잠갔다.\n계단을 올라가려는 순간, 등 뒤에서 차가운 숨결이 느껴졌다.\n\"고마워, 이제 우리 둘 뿐이야.\" 누군가가 내 귀에 속삭였다.\n천천히 뒤를 돌아보니, 지하실 벽에 있던 오래된 거울 속에서 내 모습이 웃고 있었다.\n그리고 그 웃는 내 모습은 거울 밖으로 한 발짝 내딛고 있었다.",
+                "4. 아이의 친구\n우리 다섯 살 딸 소피아는 한 달 전부터 '티미'라는 상상 속 친구에 대해 이야기하기 시작했다.\n처음에는 귀여운 아이의 상상력이라고 생각했지만, 소피아의 행동이 점점 이상해지기 시작했다.\n어느 날 아침, 소피아가 아침 식사 테이블에서 갑자기 말했다.\n\"엄마, 티미가 오늘 밤 당신을 먹겠대요. 당신 영혼이 맛있을 거래요.\"\n충격을 받았지만, 침착하게 대답했다.\n\"걱정 마, 그건 그냥 꿈이었을 거야. 티미는 진짜가 아니란다.\"\n소피아는 천천히 고개를 저으며 시리얼을 먹었다.\n\"아니에요, 꿈이 아니에요. 티미가 방금 제 귀에 그렇게 말했어요. 티미는 지금 엄마 뒤에 서 있어요.\"\n차가운 기운이 등골을 타고 내려갔다.\n뒤를 돌아보려는 순간, 소피아가 덧붙였다.\n\"티미가 말해요. 뒤돌아보면 더 빨리 죽는대요.\"",
+                "5. 보이지 않는 손님\n한 달 전부터 이상한 일이 일어나기 시작했다.\n매일 아침, 부엌에 들어서면 전날 밤 내가 씻지 않은 접시들이 깨끗하게 씻겨져 있었다.\n처음에는 몽유병이라고 생각했지만, 냉장고의 음식도 조금씩 줄어들고 있었다.\n감시 카메라를 설치했지만, 영상에는 아무것도 잡히지 않았다.\n단지 한밤중에 접시가 스스로 움직이며 씻겨지는 모습만 보였다.\n용기를 내어 식탁 위에 쪽지를 남겼다. \"당신은 누구십니까?\"\n다음 날 아침, 내 글씨체와 놀랍도록 비슷한 필체로 답장이 와 있었다.\n\"나는 당신입니다. 다른 시간선에서 온.\"\n그날 저녁, 또 다른 쪽지를 남겼다. \"증명해 보세요.\"\n다음 날 아침 쪽지에는 내 어린 시절 비밀 일기장에 적었던 내용이 적혀 있었다. 아무에게도 말한 적 없는 비밀이었다.\n오늘 아침, 마지막 쪽지를 발견했다.\n\"곧 인사드릴게요. 오늘 밤, 당신이 잠든 후에.\"",
+                "6. 마지막 승객\n폭우가 쏟아지는 한밤중, 나는 마지막 버스에 올라탔다.\n비에 흠뻑 젖은 채로 자리에 앉자, 버스는 곧 출발했다.\n창밖으로는 도시의 불빛만이 흐릿하게 보였다.\n30분이 지나자 승객들이 하나둘 내리기 시작했고, 결국 나만 남게 되었다.\n버스는 점점 낯선 길로 접어들었고, 창밖으로 보이는 풍경은 더 이상 내가 아는 도시의 모습이 아니었다.\n불안해진 나는 다음 정류장에서 내리려고 벨을 눌렀지만, 버스는 멈추지 않았다.\n그제서야 나는 백미러를 통해 운전기사와 눈이 마주쳤다.\n백미러에 비친 그의 얼굴은 기괴하게 미소를 짓고 있었고, 그 눈은 정상적인 사람의 것이 아니었다.\n\"드디어 단둘이 됐네요. 기다렸습니다.\"\n그가 운전대에서 손을 떼자, 버스는 도로를 벗어나 깊은 숲으로 향했다.\n백미러의 그는 이제 완전히 돌아서 나를 바라보고 있었지만, 운전석에는 아무도 없었다.",
+                "7. 벽 속의 소리\n새 집으로 이사온 첫날부터, 침실 벽 안에서 미세한 긁는 소리가 들렸다.\n부동산 중개인은 오래된 집이라 파이프 소리일 것이라고 했지만, 그 소리는 밤이 깊어질수록 더 커졌다.\n삼일째 밤, 나는 소리의 근원지인 벽에 귀를 대고 들었다.\n놀랍게도 그 안에서 누군가 숨을 쉬는 소리가 들렸고, 내가 움직일 때마다 그 숨소리도 따라 멈췄다.\n다섯째 날, 벽지가 미세하게 움직이기 시작했고, 작은 틈이 생겼다.\n그 틈에서 종이 조각이 슬며시 나왔다. \"도와주세요. 여기 갇혀 있어요.\"\n용기를 내어 벽지를 조금 더 찢어보니, 그 뒤에는 또 다른 벽지가 있었고, 거기에는 오래된 사진이 붙어 있었다.\n그 사진 속에는 내가 지금 살고 있는 이 방에서 찍은 내 모습이 있었다.\n그리고 사진 속 내 모습은 지금 내가 입고 있는 옷을 그대로 입고 있었다.",
+                "8. 마지막 사진\n할머니가 돌아가신 후, 가족들은 그녀의 오래된 집을 정리하기 시작했다.\n지하실에서 낡은 사진첩을 발견했고, 그 안에는 할머니의 어린 시절부터 최근까지의 사진들이 가득했다.\n사진첩을 넘기며 할머니의 인생을 되돌아보는 동안, 마음이 따뜻해졌다.\n하지만 마지막 페이지에 도달했을 때, 나는 경악할 수밖에 없었다.\n그 페이지에는 어제 있었던 할머니의 장례식 사진이 붙어 있었다.\n검은 옷을 입은 가족들, 관 주위에 놓인 꽃, 심지어 내가 읽었던 추모사를 읽는 장면까지.\n떨리는 손으로 사진첩을 덮으려는 순간, 마지막 사진 뒤에 할머니의 필체로 쓰인 메모를 발견했다.\n\"내 소중한 손주야, 다음 장에 네 사진이 곧 더해질 거란다.\"\n그리고 그 다음 페이지를 넘기자, 거기에는 아직 채워지지 않은 빈 공간이 있었고, 날짜만 적혀 있었다 - 내일의 날짜였다.",
+                "9. 잠들지 마세요\n교통사고 후 병원에서 깨어났을 때, 나는 심한 혼란 상태였다.\n의사들은 내 상태가 안정적이라고 했지만, 왠지 그들의 눈빛이 불안해 보였다.\n밤 근무 시간이 되자, 젊은 간호사가 내 병실에 들어왔다.\n그녀는 내 활력 징후를 확인하며 평소와 다름없이 행동했지만, 갑자기 다른 의료진들이 없는 것을 확인한 후 내게 가까이 다가왔다.\n\"들어주세요,\" 그녀가 떨리는 목소리로 속삭였다. \"절대 잠들지 마세요. 무슨 일이 있어도 깨어 있어야 해요.\"\n이유를 물으려 했지만, 그녀는 고개를 저었다.\n\"의사가 당신을 기다리고 있어요. 그들은... 당신이 생각하는 그런 의사가 아니에요.\"\n그녀의 눈에서 눈물이 흘렀고, 마지막으로 덧붙였다.\n\"그들은 매일 밤 한 명씩 데려가요. 오늘 밤은 당신 차례예요.\"",
+                "10. 빈 집\n2주간의 해외 출장을 마치고 집으로 돌아왔다.\n열쇠로 현관문을 열자마자, 익숙한 집 안의 향기와 함께 누군가 나를 반겨주는 목소리가 들렸다.\n\"드디어 돌아왔구나, 보고 싶었어!\"\n순간 온몸에 소름이 돋았다. 나는 혼자 산다.\n5년 전 이혼 후 이 집에는 나 외에 아무도 살지 않는다.\n천천히 거실로 걸어가자, 테이블 위에는 따뜻한 저녁 식사가 준비되어 있었고, TV는 내가 좋아하는 프로그램으로 켜져 있었다.\n부엌에서는 물이 끓는 소리가 들렸고, 누군가 허밍하는 소리가 들렸다.\n그 목소리는 너무나 익숙했다 - 그것은 내 목소리였다.\n부엌으로 들어서자, 그곳에는 내 모습 그대로인 사람이 서 있었다.\n그 사람은 날 보더니 미소지었다.\n\"이제 내가 바깥 세상을 경험할 차례야. 고마워, 집 잘 봐줘.\""
+            ];
+
+            // 각 이야기에 해당하는 이미지 URL 배열 (★★★ 여기에 실제 이미지 URL을 넣어주세요! ★★★)
+            const horrorStoryImages = [
+                "image_url_1.jpg", // 1. 마지막 메시지
+                "image_url_2.jpg", // 2. 거울 속 낯선 이
+                "image_url_3.jpg", // 3. 지하실의 소리
+                "image_url_4.jpg", // 4. 아이의 친구
+                "image_url_5.jpg", // 5. 보이지 않는 손님
+                "image_url_6.jpg", // 6. 마지막 승객
+                "image_url_7.jpg", // 7. 벽 속의 소리
+                "image_url_8.jpg", // 8. 마지막 사진
+                "image_url_9.jpg", // 9. 잠들지 마세요
+                "image_url_10.jpg" // 10. 빈 집
+            ];
+
+            // 이미 들려준 이야기의 인덱스를 저장하는 배열
+            let toldStoryIndices = [];
+
+            // 채팅창에 메시지를 추가하는 함수
+            function addMessage(content, sender, isStoryLine = false) {
+                console.log(`Adding message: "${typeof content === 'string' ? content.substring(0, 30) + '...' : 'Image'}" from ${sender}`); // Debug log
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('flex', sender === 'user' ? 'justify-end' : 'justify-start', 'mb-2');
+
+                if (typeof content === 'string') { // 텍스트 메시지 처리
+                    const messageBubble = document.createElement('div');
+                    messageBubble.classList.add(
+                        'p-2', 
+                        'rounded-none', 
+                        'max-w-md', 
+                        'text-lg', 
+                        'bg-transparent', 
+                        'break-words',
+                        'whitespace-pre-wrap' // 줄바꿈 유지
+                    );
+                    
+                    if (sender === 'user') {
+                        messageBubble.classList.add('text-green-300'); 
+                    } else {
+                        messageBubble.classList.add('text-green-500', 'text-glow'); 
+                    }
+
+                    // 짧은 기본 응답에만 타이핑 효과 적용
+                    if (sender === 'bot' && !isStoryLine) {
+                        messageBubble.textContent = ''; 
+                        let i = 0;
+                        const typingInterval = setInterval(() => {
+                            if (i < message.length) {
+                                messageBubble.textContent += message.charAt(i);
+                                i++;
+                                chatbox.scrollTop = chatbox.scrollHeight; 
+                            } else {
+                                clearInterval(typingInterval);
+                                console.log("Bot typing finished."); 
+                            }
+                        }, 50); 
+                    } else {
+                        // 사용자 메시지 및 이야기 줄은 바로 표시
+                        messageBubble.textContent = content; 
+                        setTimeout(() => { chatbox.scrollTop = chatbox.scrollHeight; }, 50);
+                    }
+                    messageDiv.appendChild(messageBubble);
+
+                } else if (content instanceof HTMLImageElement) { // 이미지 요소 처리
+                    messageDiv.appendChild(content);
+                    setTimeout(() => { chatbox.scrollTop = chatbox.scrollHeight; }, 100); // 이미지 로딩 시간 고려
+                }
+                
+                chatbox.appendChild(messageDiv);
+                // 메시지 추가 후 항상 스크롤 맨 아래로 이동
                 chatbox.scrollTop = chatbox.scrollHeight;
             }
-        }
 
-        // Function to handle sending a message
-        function sendMessage() {
-            console.log("sendMessage called"); // Debug log
-            const message = userInput.value.trim();
-            console.log(`User input: "${message}"`); // Debug log
+            // 이야기를 한 줄씩 출력하고 마지막에 이미지를 표시하는 함수
+            async function displayStory(storyText, storyIndex) {
+                const lines = storyText.split('\n'); // 줄바꿈 문자로 분리
+                for (const line of lines) {
+                    if (line.trim() !== '') { // 빈 줄은 건너뛰기
+                        addMessage(line, 'bot', true); // isStoryLine 플래그를 true로 전달
+                        await new Promise(resolve => setTimeout(resolve, 1500)); // 각 줄 사이에 1.5초 지연
+                    }
+                }
 
-            if (message === '') {
-                console.log("Empty message, not sending."); // Debug log
-                return; // Don't send empty messages
-            }
+                // 이야기 끝난 후 이미지 표시
+                const imageUrl = horrorStoryImages[storyIndex];
+                if (imageUrl && imageUrl !== `image_url_${storyIndex + 1}.jpg`) { // Placeholder가 아닌 실제 URL이 있을 경우
+                    console.log(`Displaying image: ${imageUrl}`);
+                    const imgElement = document.createElement('img');
+                    imgElement.src = imageUrl;
+                    imgElement.alt = `공포 이야기 ${storyIndex + 1} 이미지`;
+                    imgElement.classList.add('chat-image'); // 스타일 적용
+                    // 이미지 로드 실패 시 대체 처리
+                    imgElement.onerror = function() {
+                        console.error(`Failed to load image: ${imageUrl}`);
+                        this.alt = '이미지를 불러올 수 없습니다.';
+                        this.style.display = 'none'; // 실패 시 숨김 또는 대체 이미지 표시 가능
+                    };
+                    addMessage(imgElement, 'bot', true); // 이미지 요소를 메시지로 추가
+                    await new Promise(resolve => setTimeout(resolve, 500)); // 이미지 표시 후 약간의 지연
+                } else {
+                    console.log(`No valid image URL for story index ${storyIndex}`);
+                }
 
-            // Add user message to chatbox
-            addMessage("> " + message, 'user');
-            userInput.value = ''; // Clear input field
-
-            // Bot response simulation
-            userInput.disabled = true; // Disable input while bot "thinks"
-            sendButton.disabled = true;
-            console.log("Input disabled, waiting for bot response..."); // Debug log
-
-            setTimeout(() => {
-                console.log("Bot timeout finished, preparing response."); // Debug log
-                const randomResponse = botResponses[Math.floor(Math.random() * botResponses.length)];
-                addMessage(randomResponse, 'bot');
-                userInput.disabled = false; // Re-enable input
+                // 입력 활성화
+                userInput.disabled = false;
                 sendButton.disabled = false;
-                console.log("Input re-enabled."); // Debug log
-                userInput.focus(); // Focus back on input
-            }, 1500 + Math.random() * 1000); // Wait 1.5-2.5 seconds before bot responds
-        }
-
-        // Event listener for send button click
-        sendButton.addEventListener('click', () => {
-            console.log("Send button clicked."); // Debug log
-            sendMessage();
-        });
-
-        // Event listener for Enter key press in input field
-        userInput.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter' && !userInput.disabled) {
-                console.log("Enter key pressed."); // Debug log
-                sendMessage();
+                sendButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                console.log("Story display finished. Input re-enabled.");
+                userInput.focus();
             }
+
+            // 메시지 전송 처리 함수
+            async function sendMessage() {
+                console.log("sendMessage function called");
+                const message = userInput.value.trim();
+                const lowerCaseMessage = message.toLowerCase().replace(/\s+/g, ''); 
+                console.log(`User input (processed): "${lowerCaseMessage}"`);
+
+                if (message === '') {
+                    console.log("Empty message, not sending.");
+                    return;
+                }
+
+                if (Tone.context.state !== 'running') {
+                    await Tone.start();
+                    console.log("AudioContext started by user interaction (send).");
+                }
+
+                addMessage("> " + message, 'user');
+                userInput.value = '';
+
+                userInput.disabled = true;
+                sendButton.disabled = true;
+                sendButton.classList.add('opacity-50', 'cursor-not-allowed');
+                console.log("Input disabled, waiting for bot response...");
+
+                if (lowerCaseMessage === "이야기해줘") { 
+                    console.log("Story requested.");
+
+                    if (toldStoryIndices.length >= horrorStories.length) {
+                        console.log("All stories told, resetting.");
+                        toldStoryIndices = []; 
+                        addMessage("...모든 이야기를 다 한 것 같군요. 다시 시작합니다...", 'bot', false);
+                        setTimeout(() => {
+                            userInput.disabled = false;
+                            sendButton.disabled = false;
+                            sendButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                            console.log("Input re-enabled after reset message.");
+                            userInput.focus();
+                        }, 1000);
+                        return; 
+                    }
+
+                    let randomIndex;
+                    do {
+                        randomIndex = Math.floor(Math.random() * horrorStories.length);
+                    } while (toldStoryIndices.includes(randomIndex));
+
+                    toldStoryIndices.push(randomIndex); 
+                    const selectedStory = horrorStories[randomIndex];
+                    console.log(`Selected story index: ${randomIndex}, Told indices: ${toldStoryIndices}`);
+                    
+                    // 이야기와 해당 인덱스를 함께 전달
+                    displayStory(selectedStory, randomIndex); 
+
+                } else {
+                    // 기존의 랜덤 응답 처리
+                    setTimeout(() => {
+                        console.log("Bot timeout finished, preparing default response.");
+                        const randomIndex = Math.floor(Math.random() * defaultBotResponses.length);
+                        const responseMessage = defaultBotResponses[randomIndex];
+                        addMessage(responseMessage, 'bot', false);
+                        userInput.disabled = false;
+                        sendButton.disabled = false;
+                        sendButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                        console.log("Input re-enabled.");
+                        userInput.focus();
+                    }, 1000 + Math.random() * 500); 
+                }
+            }
+
+            // 이벤트 리스너 등록
+            sendButton.addEventListener('click', sendMessage);
+            userInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter' && !userInput.disabled) {
+                    sendMessage();
+                }
+            });
+
+             userInput.focus();
+             console.log("공포 챗봇 초기화 완료.");
         });
-
-         // Initial focus on input
-         userInput.focus();
-         console.log("Chatbot initialized."); // Debug log
-
     </script>
 </body>
 </html>
