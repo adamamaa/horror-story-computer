@@ -154,65 +154,88 @@
             let musicPlaying = false;
 
             function setupMusic() {
-                if (synth) return; 
-                if (Tone.context.state !== 'running') {
-                   Tone.start(); 
+                // 음악 설정은 사용자의 첫 상호작용(클릭 등) 후에 Tone.start()가 성공적으로 호출된 다음에 진행합니다.
+                if (!Tone.context || Tone.context.state !== 'running') {
+                    console.warn("AudioContext not ready for setupMusic.");
+                    return; // 오디오 컨텍스트가 준비되지 않았으면 설정하지 않음
                 }
-                synth = new Tone.FMSynth({
-                    harmonicity: 3,
-                    modulationIndex: 10,
-                    detune: 0,
-                    oscillator: { type: "sine" },
-                    envelope: { attack: 0.01, decay: 0.1, sustain: 0.5, release: 1 },
-                    modulation: { type: "square" },
-                    modulationEnvelope: { attack: 0.5, decay: 0, sustain: 1, release: 0.5 }
-                }).toDestination();
-                const reverb = new Tone.Reverb(4).toDestination(); 
-                synth.connect(reverb);
-                const pattern = new Tone.Pattern((time, note) => {
-                    if (Math.random() < 0.8) {
-                        synth.triggerAttackRelease(note, "8n", time);
-                    } else if (Math.random() < 0.9) {
-                         synth.triggerAttackRelease("C2", "4n", time); 
-                    }
-                     synth.volume.rampTo(Math.random() * -20 - 10, 0.5);
-                }, ["C3", "D#3", null, "C3", null, "F#2", null, "G#2"], "randomWalk"); 
-                pattern.interval = "2n"; 
-                Tone.Transport.bpm.value = 40; 
-                loop = pattern; 
-                console.log("Music setup complete.");
+                if (synth) return; // 이미 생성된 경우 중복 방지
+
+                try {
+                    synth = new Tone.FMSynth({
+                        harmonicity: 3, modulationIndex: 10, detune: 0,
+                        oscillator: { type: "sine" },
+                        envelope: { attack: 0.01, decay: 0.1, sustain: 0.5, release: 1 },
+                        modulation: { type: "square" },
+                        modulationEnvelope: { attack: 0.5, decay: 0, sustain: 1, release: 0.5 }
+                    }).toDestination();
+
+                    const reverb = new Tone.Reverb(4).toDestination();
+                    synth.connect(reverb);
+
+                    const pattern = new Tone.Pattern((time, note) => {
+                        if (Math.random() < 0.8) {
+                            synth.triggerAttackRelease(note, "8n", time);
+                        } else if (Math.random() < 0.9) {
+                             synth.triggerAttackRelease("C2", "4n", time); 
+                        }
+                         synth.volume.rampTo(Math.random() * -20 - 10, 0.5);
+                    }, ["C3", "D#3", null, "C3", null, "F#2", null, "G#2"], "randomWalk"); 
+                    pattern.interval = "2n"; 
+                    Tone.Transport.bpm.value = 40; 
+                    loop = pattern; 
+                    console.log("Music setup complete.");
+                } catch (error) {
+                    console.error("Error setting up music:", error);
+                    // 필요한 경우 사용자에게 오디오 설정 실패를 알릴 수 있습니다.
+                }
             }
 
             async function toggleMusic() {
-                // 사용자가 버튼을 눌렀을 때 오디오 컨텍스트 시작 시도
-                if (Tone.context.state !== 'running') {
-                    await Tone.start();
-                    console.log("AudioContext started by user interaction.");
+                try {
+                    // 사용자가 버튼을 눌렀을 때 오디오 컨텍스트 시작 시도
+                    if (Tone.context.state !== 'running') {
+                        await Tone.start();
+                        console.log("AudioContext started by user interaction.");
+                        // 컨텍스트 시작 후 즉시 음악 설정 시도
+                        setupMusic();
+                    }
+                } catch (error) {
+                    console.error("Failed to start AudioContext:", error);
+                    alert("오디오를 시작할 수 없습니다. 브라우저 설정을 확인해주세요.");
+                    return; // 오디오 시작 실패 시 더 이상 진행하지 않음
                 }
+
                  // 오디오 컨텍스트가 시작된 후에만 음악 설정 및 재생
                 if (Tone.context.state === 'running') {
-                    if (!synth) {
+                    if (!synth) { // synth가 아직 설정되지 않았다면 (첫 클릭 시)
                         setupMusic(); 
                     }
-                    if (musicPlaying) {
-                        Tone.Transport.stop();
-                        if (loop) loop.stop(); 
-                        musicControlButton.textContent = "음악 켜기";
-                        musicPlaying = false;
-                        console.log("Music stopped");
-                    } else {
-                        if (Tone.Transport.state !== "started") {
-                            Tone.Transport.start();
+                    
+                    // synth와 loop가 성공적으로 생성되었는지 확인 후 재생/정지 로직 실행
+                    if (synth && loop) {
+                        if (musicPlaying) {
+                            Tone.Transport.stop();
+                            loop.stop(); 
+                            musicControlButton.textContent = "음악 켜기";
+                            musicPlaying = false;
+                            console.log("Music stopped");
+                        } else {
+                            if (Tone.Transport.state !== "started") {
+                                Tone.Transport.start();
+                            }
+                            loop.start(0); 
+                            musicControlButton.textContent = "음악 끄기";
+                            musicPlaying = true;
+                            console.log("Music started");
                         }
-                        if (loop) loop.start(0); 
-                        musicControlButton.textContent = "음악 끄기";
-                        musicPlaying = true;
-                        console.log("Music started");
+                    } else {
+                        console.error("Synth or Loop not initialized properly.");
+                        // setupMusic 실패 시 사용자에게 알림
+                        alert("음악 초기화에 실패했습니다.");
                     }
                 } else {
                     console.warn("AudioContext not running. Music cannot be played yet.");
-                    // 사용자에게 오디오 활성화를 유도하는 메시지를 표시할 수도 있습니다.
-                    // 예: alert("오디오를 활성화하려면 화면을 클릭해주세요.");
                 }
             }
 
@@ -290,8 +313,8 @@
                         messageBubble.textContent = ''; 
                         let i = 0;
                         const typingInterval = setInterval(() => {
-                            if (i < message.length) {
-                                messageBubble.textContent += message.charAt(i);
+                            if (i < content.length) {
+                                messageBubble.textContent += content.charAt(i);
                                 i++;
                                 chatbox.scrollTop = chatbox.scrollHeight; 
                             } else {
@@ -302,6 +325,7 @@
                     } else {
                         // 사용자 메시지 및 이야기 줄은 바로 표시
                         messageBubble.textContent = content; 
+                        // 약간의 딜레이 후 스크롤 (타이핑 효과가 없으므로)
                         setTimeout(() => { chatbox.scrollTop = chatbox.scrollHeight; }, 50);
                     }
                     messageDiv.appendChild(messageBubble);
@@ -312,8 +336,9 @@
                 }
                 
                 chatbox.appendChild(messageDiv);
-                // 메시지 추가 후 항상 스크롤 맨 아래로 이동
-                chatbox.scrollTop = chatbox.scrollHeight;
+                // 메시지 추가 후 스크롤 맨 아래로 이동
+                // 약간의 지연을 주어 렌더링 후 스크롤되도록 함
+                setTimeout(() => { chatbox.scrollTop = chatbox.scrollHeight; }, 0);
             }
 
             // 이야기를 한 줄씩 출력하고 마지막에 이미지를 표시하는 함수
@@ -328,7 +353,8 @@
 
                 // 이야기 끝난 후 이미지 표시
                 const imageUrl = horrorStoryImages[storyIndex];
-                if (imageUrl && imageUrl !== `image_url_${storyIndex + 1}.jpg`) { // Placeholder가 아닌 실제 URL이 있을 경우
+                // Placeholder URL이 아닌지 확인하고, URL이 유효한 형식인지 간단히 체크 (http 또는 https로 시작)
+                if (imageUrl && imageUrl.startsWith('http')) { 
                     console.log(`Displaying image: ${imageUrl}`);
                     const imgElement = document.createElement('img');
                     imgElement.src = imageUrl;
@@ -337,14 +363,29 @@
                     // 이미지 로드 실패 시 대체 처리
                     imgElement.onerror = function() {
                         console.error(`Failed to load image: ${imageUrl}`);
-                        this.alt = '이미지를 불러올 수 없습니다.';
-                        this.style.display = 'none'; // 실패 시 숨김 또는 대체 이미지 표시 가능
+                        const errorMsg = document.createElement('p');
+                        errorMsg.textContent = '[이미지를 불러올 수 없습니다]';
+                        errorMsg.classList.add('text-red-500', 'text-sm', 'italic');
+                        // 이미지 대신 에러 메시지를 포함하는 div를 추가
+                        const errorDiv = document.createElement('div');
+                        errorDiv.classList.add('flex', 'justify-start', 'mb-2');
+                        const errorBubble = document.createElement('div');
+                        errorBubble.classList.add('p-2', 'rounded-none', 'max-w-md', 'text-lg', 'bg-transparent');
+                        errorBubble.appendChild(errorMsg);
+                        errorDiv.appendChild(errorBubble);
+                        chatbox.appendChild(errorDiv);
+                        chatbox.scrollTop = chatbox.scrollHeight;
                     };
-                    addMessage(imgElement, 'bot', true); // 이미지 요소를 메시지로 추가
-                    await new Promise(resolve => setTimeout(resolve, 500)); // 이미지 표시 후 약간의 지연
+                     // 이미지가 성공적으로 로드되면 메시지로 추가
+                    imgElement.onload = function() {
+                         addMessage(imgElement, 'bot', true); // 이미지 요소를 메시지로 추가
+                    }
                 } else {
-                    console.log(`No valid image URL for story index ${storyIndex}`);
+                    console.log(`No valid image URL for story index ${storyIndex}. Provided: ${imageUrl}`);
                 }
+
+                 // 이미지 표시 (또는 미표시) 후 약간의 지연 추가 후 입력 활성화
+                 await new Promise(resolve => setTimeout(resolve, 500)); 
 
                 // 입력 활성화
                 userInput.disabled = false;
@@ -358,17 +399,22 @@
             async function sendMessage() {
                 console.log("sendMessage function called");
                 const message = userInput.value.trim();
-                const lowerCaseMessage = message.toLowerCase().replace(/\s+/g, ''); 
-                console.log(`User input (processed): "${lowerCaseMessage}"`);
+                console.log(`User input: "${message}"`); // 로그 수정
 
                 if (message === '') {
                     console.log("Empty message, not sending.");
                     return;
                 }
 
-                if (Tone.context.state !== 'running') {
-                    await Tone.start();
-                    console.log("AudioContext started by user interaction (send).");
+                // 오디오 컨텍스트 시작 시도 (사용자 상호작용 필요)
+                try {
+                    if (Tone.context.state !== 'running') {
+                        await Tone.start();
+                        console.log("AudioContext started by user interaction (send).");
+                    }
+                } catch (error) {
+                    console.error("Failed to start AudioContext on send:", error);
+                    // 오디오 시작 실패해도 채팅은 계속 진행
                 }
 
                 addMessage("> " + message, 'user');
@@ -379,20 +425,23 @@
                 sendButton.classList.add('opacity-50', 'cursor-not-allowed');
                 console.log("Input disabled, waiting for bot response...");
 
-                if (lowerCaseMessage === "이야기해줘") { 
+                // "이야기 해줘" 와 정확히 일치하는지 확인 (띄어쓰기 포함)
+                if (message === "이야기 해줘") { 
                     console.log("Story requested.");
 
                     if (toldStoryIndices.length >= horrorStories.length) {
                         console.log("All stories told, resetting.");
                         toldStoryIndices = []; 
-                        addMessage("...모든 이야기를 다 한 것 같군요. 다시 시작합니다...", 'bot', false);
+                        // 모든 이야기를 다 했다는 메시지 추가
+                        addMessage("...모든 이야기를 다 한 것 같군요. 다시 시작합니다...", 'bot', false); 
+                        // 잠시 후 입력 활성화 (이야기 표시 함수를 호출하지 않으므로 여기서 직접 활성화)
                         setTimeout(() => {
                             userInput.disabled = false;
                             sendButton.disabled = false;
                             sendButton.classList.remove('opacity-50', 'cursor-not-allowed');
                             console.log("Input re-enabled after reset message.");
                             userInput.focus();
-                        }, 1000);
+                        }, 1000); // 메시지 표시 시간 고려
                         return; 
                     }
 
@@ -405,20 +454,25 @@
                     const selectedStory = horrorStories[randomIndex];
                     console.log(`Selected story index: ${randomIndex}, Told indices: ${toldStoryIndices}`);
                     
-                    // 이야기와 해당 인덱스를 함께 전달
+                    // 이야기 표시 함수 호출 (비동기)
+                    // 입력 활성화는 displayStory 함수 내에서 처리됩니다.
                     displayStory(selectedStory, randomIndex); 
 
                 } else {
-                    // 기존의 랜덤 응답 처리
+                    // "이야기 해줘"가 아닌 다른 입력 처리
+                    console.log("Default response triggered."); // 디버그 로그 추가
                     setTimeout(() => {
                         console.log("Bot timeout finished, preparing default response.");
                         const randomIndex = Math.floor(Math.random() * defaultBotResponses.length);
-                        const responseMessage = defaultBotResponses[randomIndex];
-                        addMessage(responseMessage, 'bot', false);
+                        const randomResponse = defaultBotResponses[randomIndex];
+                        console.log(`Selected response: "${randomResponse}"`);
+                        addMessage(randomResponse, 'bot', false); // isStoryLine 플래그 false
+                        
+                        // 짧은 응답 후 바로 입력 활성화
                         userInput.disabled = false;
                         sendButton.disabled = false;
                         sendButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                        console.log("Input re-enabled.");
+                        console.log("Input re-enabled after default response.");
                         userInput.focus();
                     }, 1000 + Math.random() * 500); 
                 }
