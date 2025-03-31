@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>공포 이야기 봇</title>
+    
+    
+
+<script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        /* Use VT323 font for the old computer terminal look */
+        body, input, button {
+            font-family: 'VT323', monospace;
+        }
+        /* Basic scanline effect */
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 4px, 3px 100%;
+            pointer-events: none;
+            animation: flicker 0.15s infinite;
+        }
+        /* Flicker animation */
+        @keyframes flicker {
+          0% { opacity: 0.219; }
+          5% { opacity: 0.946; }
+          10% { opacity: 0.515; }
+          15% { opacity: 0.958; }
+          20% { opacity: 0.364; }
+          25% { opacity: 0.794; }
+          30% { opacity: 0.117; }
+          35% { opacity: 0.534; }
+          40% { opacity: 0.196; }
+          45% { opacity: 0.18; }
+          50% { opacity: 0.471; }
+          55% { opacity: 0.419; }
+          60% { opacity: 0.719; }
+          65% { opacity: 0.103; }
+          70% { opacity: 0.817; }
+          75% { opacity: 0.152; }
+          80% { opacity: 0.21; }
+          85% { opacity: 0.86; }
+          90% { opacity: 0.34; }
+          95% { opacity: 0.67; }
+          100% { opacity: 0.33; }
+        }
+
+        /* Custom scrollbar for chat area */
+        #chatbox::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chatbox::-webkit-scrollbar-track {
+            background: #1a1a1a; /* Dark track */
+            border-radius: 0;
+        }
+        #chatbox::-webkit-scrollbar-thumb {
+            background: #00ff00; /* Green thumb */
+            border-radius: 0;
+        }
+        #chatbox::-webkit-scrollbar-thumb:hover {
+            background: #00cc00; /* Darker green thumb on hover */
+        }
+        /* Add slight glow to text */
+        .text-glow {
+             text-shadow: 0 0 5px #00ff00, 0 0 10px #00ff00;
+        }
+    </style>
+</head>
+<body class="bg-black flex items-center justify-center min-h-screen p-4">
+
+    
+    
+
+<div class="w-full max-w-2xl bg-black border-4 border-gray-700 rounded-lg shadow-xl overflow-hidden flex flex-col" style="height: 80vh; box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);">
+        
+        
+        
+
+<div class="bg-black p-3 border-b-2 border-gray-700 text-center">
+            <h1 class="text-2xl font-bold text-green-500 text-glow">[ 경고: 공포 이야기 봇 ]</h1>
+        </div>
+
+        
+        
+        
+        
+
+<div id="chatbox" class="flex-1 p-4 overflow-y-auto space-y-4 bg-black text-green-400 text-lg">
+            
+            
+            
+            
+            
+
+<div class="flex justify-start">
+                <div class="bg-transparent p-2 rounded-none max-w-xs text-glow">
+                    ...누구...세요...? 여긴... 왜 오셨죠...? 💀
+                </div>
+            </div>
+        </div>
+
+        
+        
+        
+        
+        
+        
+
+<div class="p-4 bg-black border-t-2 border-gray-700 flex items-center space-x-2">
+            <span class="text-green-500 text-glow text-xl">></span>
+            <input type="text" id="userInput" class="flex-1 bg-transparent border border-green-700 rounded-none px-3 py-1 text-green-400 focus:outline-none focus:ring-1 focus:ring-green-500 placeholder-gray-600 text-lg" placeholder="무언가 입력하세요... 용기가 있다면..." autocomplete="off">
+            <button id="sendButton" class="bg-green-700 hover:bg-green-600 text-black font-bold py-1 px-3 rounded-none border border-green-900 transition duration-200 ease-in-out text-lg">
+                전송
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const chatbox = document.getElementById('chatbox');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+
+        // Predefined horror story snippets/phrases for the bot (in Korean)
+        const botResponses = [
+            "방금... 창 밖에 누가 있었던 것 같은데...",
+            "쉿... 발소리가 들리지 않아요?",
+            "거울 속의 당신, 정말 당신이 맞나요?",
+            "이 메시지는... 어디서 오는 걸까요?",
+            "어두워지면... 혼자 계시지 마세요.",
+            "똑똑... 문을 열어줘야 할까요?",
+            "제 뒤에... 누가 서 있는 것 같아요.",
+            "스크린 너머로... 당신을 보고 있어요.",
+            "잠들면... 꿈 속에서 만날지도 몰라요.",
+            "삐걱... 삐걱... 다락방에서 나는 소리...",
+            "절대... 뒤돌아보지 마세요."
+        ];
+
+        // Function to add a message to the chatbox
+        function addMessage(message, sender) {
+            console.log(`Adding message: "${message}" from ${sender}`); // Debug log
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('flex', sender === 'user' ? 'justify-end' : 'justify-start');
+
+            const messageBubble = document.createElement('div');
+            messageBubble.classList.add(
+                'p-2', // Reduced padding
+                'rounded-none', // No rounded corners
+                'max-w-md', // Slightly wider max width
+                'text-lg', // Monospace font size
+                sender === 'user' ? 'bg-transparent text-green-300' : 'bg-transparent text-green-500 text-glow' // User messages less bright
+            );
+
+            // Simulate typing effect for bot messages
+            if (sender === 'bot') {
+                messageBubble.textContent = ''; // Start empty
+                let i = 0;
+                const typingInterval = setInterval(() => {
+                    if (i < message.length) {
+                        messageBubble.textContent += message.charAt(i);
+                        i++;
+                        chatbox.scrollTop = chatbox.scrollHeight; // Scroll as text types
+                    } else {
+                        clearInterval(typingInterval);
+                        console.log("Bot typing finished."); // Debug log
+                    }
+                }, 50); // Typing speed
+            } else {
+                 messageBubble.textContent = message; // User message appears instantly
+            }
+
+            messageDiv.appendChild(messageBubble);
+            chatbox.appendChild(messageDiv);
+
+            // Scroll to the bottom (especially for user messages)
+             if (sender === 'user') {
+                chatbox.scrollTop = chatbox.scrollHeight;
+            }
+        }
+
+        // Function to handle sending a message
+        function sendMessage() {
+            console.log("sendMessage called"); // Debug log
+            const message = userInput.value.trim();
+            console.log(`User input: "${message}"`); // Debug log
+
+            if (message === '') {
+                console.log("Empty message, not sending."); // Debug log
+                return; // Don't send empty messages
+            }
+
+            // Add user message to chatbox
+            addMessage("> " + message, 'user');
+            userInput.value = ''; // Clear input field
+
+            // Bot response simulation
+            userInput.disabled = true; // Disable input while bot "thinks"
+            sendButton.disabled = true;
+            console.log("Input disabled, waiting for bot response..."); // Debug log
+
+            setTimeout(() => {
+                console.log("Bot timeout finished, preparing response."); // Debug log
+                const randomResponse = botResponses[Math.floor(Math.random() * botResponses.length)];
+                addMessage(randomResponse, 'bot');
+                userInput.disabled = false; // Re-enable input
+                sendButton.disabled = false;
+                console.log("Input re-enabled."); // Debug log
+                userInput.focus(); // Focus back on input
+            }, 1500 + Math.random() * 1000); // Wait 1.5-2.5 seconds before bot responds
+        }
+
+        // Event listener for send button click
+        sendButton.addEventListener('click', () => {
+            console.log("Send button clicked."); // Debug log
+            sendMessage();
+        });
+
+        // Event listener for Enter key press in input field
+        userInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter' && !userInput.disabled) {
+                console.log("Enter key pressed."); // Debug log
+                sendMessage();
+            }
+        });
+
+         // Initial focus on input
+         userInput.focus();
+         console.log("Chatbot initialized."); // Debug log
+
+    </script>
+</body>
+</html>
